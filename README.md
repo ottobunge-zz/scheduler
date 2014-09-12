@@ -1,4 +1,4 @@
-scheduler
+SCHEDULER
 =========
 
 Python script scheduler
