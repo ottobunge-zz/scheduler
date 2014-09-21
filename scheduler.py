@@ -1,4 +1,4 @@
-import sys, os, datetime, fileinput, shutil
+import sys, os, datetime, fileinput, shutil, commands
 
 wd = os.getcwd()
 lwd = os.path.join(wd,'scripts')
@@ -14,14 +14,18 @@ def getFiles():
 	return files
 
 def getFileLastrun(file_):
-	for line in lastrunmemory:
-		if file_ in line:
-			date = line.split(",")[1].replace('\n','')
-			date = datetime.datetime.strptime(date, ' %Y-%m-%d %H:%M:%S')
-			return date
-		else:
-			pass
-	return None
+	try:
+		for line in lastrunmemory:
+			if file_ in line:
+				date = line.split(",")[1].replace('\n','')
+				date = datetime.datetime.strptime(date, ' %Y-%m-%d %H:%M:%S')
+				return date
+			else:
+				pass
+		return None
+	except ValueError:
+		print 'seems none for ', file_
+		return None
 def getFileSchedule(file_):
 	splits = file_.split('-')
 	for split in splits:
@@ -33,10 +37,14 @@ def getFileSchedule(file_):
 	return None
 
 def fileRunner(file_, lastrun, schedule):
-	if lastrun == None or lastrun + schedule <= datetime.datetime.now():
-		os.system('screen -A -m -d -S ' + file.replace('.py','') + ' python '+ os.path.join(lwd,file))		
-		print 'running ', file.replace('py','')
-		return True
+	if schedule == None or lastrun == None or lastrun + schedule <= datetime.datetime.now():
+		output = commands.getoutput('ps aux')
+		if file_ not in output:
+			os.system('python '+ os.path.join(lwd,file)+ ' >>' + os.path.join(wd,'logs',file)+'.log' + '&')		
+			print 'running ', file.replace('py','')
+			return True
+		else:
+			return False
 	else:
 		return False
 
@@ -52,7 +60,6 @@ def lastrunUpdate(changedfiles, unchangedfiles):
 	for line in lines:
 		tmpfile.write(line)
 	tmpfile.close()
-	os.remove('lastrun.dat')
 	shutil.move('lastruntmp.dat', 'lastrun.dat')
 	
 
